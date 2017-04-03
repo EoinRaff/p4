@@ -16,12 +16,17 @@ AudioControlSGTL5000     sgtl5000_1;
 #define SDCARD_MOSI_PIN  7
 #define SDCARD_SCK_PIN   14
 
-const int buttonPin1 = 39;     // the number of the pushbutton pin
-const int buttonPin2 = 26;     // the number of the pushbutton pin
+const int buttonPin1 = 24;     // the number of the pushbutton pin
+const int buttonPin2 = 25;
+const int buttonPin3 = 26;
+
 
 int buttonState1 = 0;         // variable for reading the pushbutton status
-int buttonState2 = 0;         // variable for reading the pushbutton status
+int buttonState2 = 0;
+int buttonState3 = 0;
 
+
+ 
 void setup() {
   Serial.begin(9600);
 
@@ -44,8 +49,14 @@ void setup() {
       delay(500);
     }
   }
-    pinMode(buttonPin1, INPUT);     
-    pinMode(buttonPin2, INPUT);     
+    pinMode(buttonPin1, INPUT);    
+    pinMode(buttonPin2, INPUT);  
+    pinMode(buttonPin3, INPUT);  
+
+
+ 
+
+   
 }
 
 void playFile(const char *filename,int wavNum)
@@ -57,11 +68,8 @@ void playFile(const char *filename,int wavNum)
 
   // Start playing the file.  This sketch continues to
   // run while the file plays.
-  if  (wavNum == 1) {
   playWav1.play(filename);
-  } else if (wavNum == 2) { 
-  playWav2.play(filename);
-  }
+ 
 
 
   // A brief delay for the library read WAV info
@@ -76,13 +84,6 @@ void playFile(const char *filename,int wavNum)
     // sgtl5000_1.volume(vol);
   }
 
-  while (playWav2.isPlaying()) {
-    // uncomment these lines if you audio shield
-    // has the optional volume pot soldered
-    //float vol = analogRead(15);
-    //vol = vol / 1024;
-    // sgtl5000_1.volume(vol);
-  }
 
     
 }
@@ -92,14 +93,29 @@ void loop() {
 
    buttonState1 = digitalRead(buttonPin1);
    buttonState2 = digitalRead(buttonPin2);
+   buttonState3 = digitalRead(buttonPin3);
 
-  if (buttonState1 == HIGH) {     
+
+
+
+    if (buttonState1 == HIGH) {     
+    playFile("INST6BIP.WAV",1); 
+    delay(500);
+  } 
+
+  if (buttonState2 == HIGH) {     
+    playFile("ISFLAK.WAV",1); 
+    delay(500);
+  } 
+
+   if (buttonState3 == HIGH) {     
     playFile("SIDE.WAV",1); 
     delay(500);
-  } else if (buttonState2 == HIGH) {
-    Serial.print("PRESSED!");
-    playFile("SDTEST1.WAV",2);
-    delay(500);
-  }
+  } 
+
+
+
+
+  
 }
 
