@@ -65,7 +65,7 @@ void loop() {
   buttonState2 = digitalRead(button2);
   if(buttonState0 == HIGH && !playSdWav1.isPlaying()){
     Serial.println("Start Playing 1");
-    playSdWav1.play("INST6BIP.WAV");
+    playSdWav1.play("INST6.WAV");
     delay(10);
   }
   if(buttonState1 == HIGH && !playSdWav2.isPlaying()){
@@ -75,7 +75,18 @@ void loop() {
   }
   if(buttonState2 == HIGH && !playSdWav3.isPlaying()){
     Serial.println("Start Playing 3");
-    playSdWav3.play("SIDE.WAV");
+    playSdWav3.play("ARCTIC.WAV");
     delay(10);
   }
 }
+
+/* FILE NAMES:
+ *  
+ * ARCTIC.wav
+ * CRICKET.wav
+ * FLLONGF.wav
+ * INDIAN.wav
+ * INST6.wav
+ * ISFLAK:wav
+ * QOT.wav
+ */
