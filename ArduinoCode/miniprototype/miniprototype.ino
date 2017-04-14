@@ -26,10 +26,10 @@ AudioControlSGTL5000     sgtl5000_1;
 // GUItool: end automatically generated code
 
 
-const int button0 = 24;
-const int button1 = 25;
-const int button2 = 26;
-const int button3 = 37;
+const int button0 = 36;
+const int button1 = 37;
+const int button2 = 38;
+const int button3 = 39;
 
 int buttonState0 = 0;
 int buttonState1 = 0;
@@ -61,6 +61,7 @@ void setup() {
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
   pinMode(button3, INPUT);
+
 }
 
 void loop() {
@@ -70,27 +71,28 @@ void loop() {
   buttonState1 = digitalRead(button1);
   buttonState2 = digitalRead(button2);
   buttonState3 = digitalRead(button3);
+
   
   if(buttonState0 == HIGH && !playSdWav1.isPlaying()){
     Serial.println("Start Playing 1");
-    playSdWav1.play("INST6.WAV");
+    playSdWav1.play("FLLONG.WAV");
     delay(10);
   }
   if(buttonState1 == HIGH && !playSdWav2.isPlaying()){
     Serial.println("Start Playing 2");
-    playSdWav2.play("ISFLAK.WAV");
+    playSdWav2.play("CRICKET.WAV");
     delay(10);
   }
   if(buttonState2 == HIGH && !playSdWav3.isPlaying()){
     Serial.println("Start Playing 3");
-    playSdWav3.play("ARCTIC.WAV");
+    playSdWav3.play("ISFLAK.WAV");
     delay(10);
   }  
   if(buttonState3 == HIGH && !playSdWav4.isPlaying()){
     Serial.println("Start Playing 4");
-    playSdWav4.play("CRICKET.WAV");
+    playSdWav4.play("SITAR.WAV");
     delay(10);
-  }
+  }  
 }
 
 /* FILE NAMES:
