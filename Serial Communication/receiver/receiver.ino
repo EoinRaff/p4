@@ -1,13 +1,13 @@
 #include <SoftwareSerial.h>
 
-const byte rxPin = 0;
-const byte txPin = 1;
+const byte rxPin = 2;
+const byte txPin = 3;
 
 const int ledPin = 12; 
 
 int incomingByte;
 
-SoftwareSerial mySerial =  SoftwareSerial(rxPin, txPin);
+SoftwareSerial mySerial =  SoftwareSerial (rxPin, txPin);
 
 void setup()  
 {
