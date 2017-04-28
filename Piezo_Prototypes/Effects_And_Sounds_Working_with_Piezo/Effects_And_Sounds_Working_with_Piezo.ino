@@ -43,7 +43,6 @@ AudioControlSGTL5000     sgtl5000_1;     //xy=426,498
 // For Effects
 const int buttonEffect0 = 35;
 const int buttonEffect1 = 34;
-const int buttonEffect2 = 33;
 
 // For sounds
 const int piezo1 = 39;
@@ -51,12 +50,11 @@ const int piezo2 = 38;
 const int piezo3 = 37;
 const int piezo4 = 36;
 
-#define THRESHOLD 50 // Threshold for sensitivity of Piezo's
+#define THRESHOLD 30 // Threshold for sensitivity of Piezo's
 
 // For Buttons
 int buttonStateEffect0 = 0;
 int buttonStateEffect1 = 0;
-int buttonStateEffect2 = 0;
 
 // Variables for effects
 int delayTime = 400;
@@ -75,7 +73,7 @@ void setup() {
   AudioMemory(160);
 
   sgtl5000_1.enable(); // Controls of Audio shield
-  sgtl5000_1.volume(0.7);
+  sgtl5000_1.volume(0.9);
 
   SPI.setMOSI(7); //Controls for SD reader
   SPI.setSCK(14); //Controls for SD reader
@@ -110,22 +108,20 @@ void setup() {
   mixer4.gain(3, 0);
 
   // Initialize effects
-  bitcrusher1.bits(10);
-  bitcrusher1.sampleRate(16000);
+  //bitcrusher1.bits(8);
+  //bitcrusher1.sampleRate(16000);
   reverb1.reverbTime(4);
   delay1.delay(1, 0);
   delay(1000);
 
   pinMode(buttonEffect0, INPUT);
   pinMode(buttonEffect1, INPUT);
-  pinMode(buttonEffect2, INPUT);
 }
 
 void loop() {
 
   buttonStateEffect0 = digitalRead(buttonEffect0);
   buttonStateEffect1 = digitalRead(buttonEffect1);
-  buttonStateEffect2 = digitalRead(buttonEffect2);
 
   // Create variable that reads the value from the piezo
   PiezoVal1 = analogRead(piezo1);
@@ -144,7 +140,7 @@ void loop() {
       mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
-    playSdWav1.play("FLLONG.WAV");
+    playSdWav1.play("SAFRIDUO.WAV");
     delay(10);
   }
 
@@ -159,7 +155,7 @@ void loop() {
       mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
-    playSdWav2.play("SIXBIP.WAV");
+    playSdWav2.play("FREESTYLER.WAV");
     delay(10);
   }
 
@@ -174,7 +170,7 @@ void loop() {
       mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
-    playSdWav3.play("ISFLAK.WAV");
+    playSdWav3.play("CON.WAV");
     delay(10);
   }
 
@@ -189,13 +185,13 @@ void loop() {
       mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
-    playSdWav4.play("SITAR.WAV");
+    playSdWav4.play("SAND.WAV");
     delay(10);
   }
 
   if (buttonStateEffect0 == HIGH) {
     effectOn = true;
-    addDistort();
+    addReverb();
   } else {
     effectOn = false;
   }
@@ -206,22 +202,15 @@ void loop() {
   } else {
     effectOn = false;
   }
-
-  if (buttonStateEffect2 == HIGH) {
-    effectOn = true;
-    addReverb();
-  } else {
-    effectOn = false;
-  }
 }
 // Functions for effects
 
-void addDistort () {
+/*void addDistort () {
   mixer4.gain(0, 0);
   mixer4.gain(1, 0.4);
   mixer4.gain(2, 0);
   mixer4.gain(3, 0);
-}
+} */
 
 void addDelay () {
   delay1.delay(0, delayTime);
