@@ -4,19 +4,24 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
+#include <Audio.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+#include <SerialFlash.h>
+
 // GUItool: begin automatically generated code
 AudioPlaySdWav           playSdWav1;     //xy=119,177
 AudioPlaySdWav           playSdWav3;     //xy=119,304
 AudioPlaySdWav           playSdWav2;     //xy=120,235
-AudioPlaySdWav           playSdWav4;     //xy=123,378
+AudioPlaySdWav           playSdWav4;     //xy=121,376
+AudioMixer4              mixer1;         //xy=356,214
+AudioSynthSimpleDrum     drum1;          //xy=357,410
 AudioMixer4              mixer2;         //xy=359,327
-AudioMixer4              mixer1;         //xy=360,223
-AudioMixer4              mixer3;         //xy=549,273
-AudioEffectDelay         delay1;         //xy=653,477
-AudioEffectBitcrusher    bitcrusher1;    //xy=753,314
-AudioEffectReverb        reverb1;        //xy=913,470
-AudioMixer4              mixer4;         //xy=1019,271
-AudioOutputI2S           i2s1;           //xy=1181,260
+AudioSynthKarplusStrong  string1;        //xy=360,467
+AudioMixer4              mixer7;         //xy=553.5555114746094,292.66668701171875
+AudioMixer4              mixer4;         //xy=1113.5714111328125,179.2381591796875
+AudioOutputI2S           i2s1;           //xy=1319.4285278320312,281.0952949523926
 AudioConnection          patchCord1(playSdWav1, 0, mixer1, 0);
 AudioConnection          patchCord2(playSdWav1, 1, mixer2, 0);
 AudioConnection          patchCord3(playSdWav3, 0, mixer1, 2);
@@ -25,39 +30,32 @@ AudioConnection          patchCord5(playSdWav2, 0, mixer1, 1);
 AudioConnection          patchCord6(playSdWav2, 1, mixer2, 1);
 AudioConnection          patchCord7(playSdWav4, 0, mixer1, 3);
 AudioConnection          patchCord8(playSdWav4, 1, mixer2, 3);
-AudioConnection          patchCord9(mixer2, 0, mixer3, 1);
-AudioConnection          patchCord10(mixer1, 0, mixer3, 0);
-AudioConnection          patchCord11(mixer3, 0, mixer4, 0);
-AudioConnection          patchCord12(mixer3, delay1);
-AudioConnection          patchCord13(mixer3, bitcrusher1);
-AudioConnection          patchCord14(mixer3, reverb1);
-AudioConnection          patchCord15(delay1, 0, mixer3, 3);
-AudioConnection          patchCord16(delay1, 0, mixer4, 2);
-AudioConnection          patchCord17(bitcrusher1, 0, mixer4, 1);
-AudioConnection          patchCord18(reverb1, 0, mixer4, 3);
-AudioConnection          patchCord19(mixer4, 0, i2s1, 0);
-AudioConnection          patchCord20(mixer4, 0, i2s1, 1);
-AudioControlSGTL5000     sgtl5000_1;     //xy=426,498
+AudioConnection          patchCord9(mixer1, 0, mixer7, 0);
+AudioConnection          patchCord10(drum1, 0, mixer7, 2);
+AudioConnection          patchCord11(mixer2, 0, mixer7, 1);
+AudioConnection          patchCord12(string1, 0, mixer7, 3);
+AudioConnection          patchCord13(mixer7, 0, i2s1, 0);
+AudioConnection          patchCord14(mixer7, 0, i2s1, 1);
+AudioControlSGTL5000     sgtl5000_1;     //xy=1148.888916015625,455.6667175292969
 // GUItool: end automatically generated code
 
-// For Effects pins
+// For Effects
 const int buttonEffect0 = 35;
 const int buttonEffect1 = 34;
 
-// For sounds pins
+// For sounds
 const int piezo1 = 39;
 const int piezo2 = 38;
 const int piezo3 = 37;
 const int piezo4 = 36;
 
-#define THRESHOLD 20 // Threshold for sensitivity of Piezo's
+#define THRESHOLD 30 // Threshold for sensitivity of Piezo's
 
 // For Buttons
 int buttonStateEffect0 = 0;
 int buttonStateEffect1 = 0;
 
 // Variables for effects
-int delayTime = 300;
 bool effectOn = false;
 
 // Bytes to store the velocity of the piezo's
@@ -66,12 +64,13 @@ byte PiezoVal2 = 0;
 byte PiezoVal3 = 0;
 byte PiezoVal4 = 0;
 
+bool startEffectOff = false; 
+
 void setup() {
 
   Serial.begin(9600);
 
-  //This reserves memory blocks for the audio samples used. Each block contain 128 audio samples, which correspond to approx 2.9 ms of sound.
-  AudioMemory(500); // 100 was chosen because AudioProcessorUsageMax returned a max of 86, testing. Thus we chose 100, to make sure there enough, but still room for more manipulation. 
+  AudioMemory(255); // This is allocateed memory blocks. One block can contain 128 ms of audio samples, corresponding with 2.9 ms.
 
   sgtl5000_1.enable(); // Controls of Audio shield
   sgtl5000_1.volume(0.9);
@@ -97,37 +96,62 @@ void setup() {
   mixer2.gain(2, 0.25);
   mixer2.gain(3, 0.25);
 
-  // Set gains for third mixer
+  // Set gains for Last sound mixer
+  mixer7.gain(0, 0.33);
+  mixer7.gain(1, 0.33);
+  mixer7.gain(2, 0.33);
+  mixer7.gain(3, 0.33);
+
+  /*
+  // Set gains for ozzy mixer
   mixer3.gain(0, 0.5);
-  mixer3.gain(1, 0.5);
-  mixer3.gain(3, 0);
+  mixer3.gain(3, 0.5);
 
   // Set gains to passthrough sound without effects
-  mixer4.gain(0, 0.4);
+  mixer4.gain(0, 0.5);
   mixer4.gain(1, 0);
-  mixer4.gain(2, 0);
-  mixer4.gain(3, 0);
+
+  
+  // Initialize Ozzy
+  waveform1.begin(20, 220, WAVEFORM_SQUARE);
+  waveform2.begin(20, 523.25, WAVEFORM_SAWTOOTH);
+
+  filter1.frequency(122);
+  filter1.resonance(0);
+
+  envelope1.attack(0);
+  envelope1.decay(500);
+  envelope1.sustain(0.2);
+  envelope1.release(600);
+
+  envelope2.attack(0);
+  envelope2.decay(1000);
+  envelope2.sustain(1.0);
+  envelope2.release(600);
+
+  */
+
+  drum1.frequency (220);
+  drum1.length (1000);
+
+  
+
 
   // Initialize effects
-  //bitcrusher1.bits(8);
-  //bitcrusher1.sampleRate(16000);
-  reverb1.reverbTime(2);
-  delay1.delay(1, 0);
-  delay(1000);
 
   pinMode(buttonEffect0, INPUT);
   pinMode(buttonEffect1, INPUT);
-
 }
 
 void loop() {
 
-  //Serial.println(AudioMemoryUsageMax());
-  Serial.println(AudioProcessorUsageMax());
-
-  
   buttonStateEffect0 = digitalRead(buttonEffect0);
   buttonStateEffect1 = digitalRead(buttonEffect1);
+
+  Serial.println(buttonStateEffect0);
+
+  //Serial.println (AudioMemoryUsageMax());
+  //Serial.println (AudioProcessorUsageMax());
 
   // Create variable that reads the value from the piezo
   PiezoVal1 = analogRead(piezo1);
@@ -135,50 +159,46 @@ void loop() {
   PiezoVal3 = analogRead(piezo3);
   PiezoVal4 = analogRead(piezo4);
 
-  
-  if (PiezoVal1 > THRESHOLD) {
-    Serial.println("Start Playing 1");
+  /*
+    if (PiezoVal1 > THRESHOLD) {
+      Serial.println("Start Playing 1");
 
-    if (!effectOn) { // Set the mixer to passthrough sound without effects
-      mixer4.gain(0, 0.4);
-      mixer4.gain(1, 0);
-      mixer4.gain(2, 0);
-      mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
-      delay1.delay(0, 0);
+      if (!effectOn) { // Set the mixer to passthrough sound without effects
+        mixer4.gain(0, 0.4);
+        mixer4.gain(1, 0);
+        mixer4.gain(2, 0);
+        mixer4.gain(3, 0);
+        mixer3.gain(3, 0);
+        delay1.delay(0, 0);
+      }
+      playSdWav1.play("SAFRIDUO.WAV");
+      delay(10);
     }
-    playSdWav1.play("SAFRIDUO.WAV");
-    delay(10);
-  }
- 
+  
 
   if (PiezoVal2 > THRESHOLD) {
     Serial.println("Start Playing 2");
 
+    
     if (!effectOn) {
       mixer4.gain(0, 0.4);
       mixer4.gain(1, 0);
-      mixer4.gain(2, 0);
-      mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
-      delay1.delay(0, 0);
     }
-    playSdWav2.play("LIONKING.WAV");
     
+    playSdWav2.play("LIONKING.WAV");
     delay(10);
   }
 
   if (PiezoVal3 > THRESHOLD) {
     Serial.println("Start Playing 3");
 
+     
+
     if (!effectOn) {
       mixer4.gain(0, 0.4);
       mixer4.gain(1, 0);
-      mixer4.gain(2, 0);
-      mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
-      delay1.delay(0, 0);
     }
+    
     playSdWav3.play("FREE.WAV");
     delay(10);
   }
@@ -186,53 +206,77 @@ void loop() {
   if (PiezoVal4 > THRESHOLD) {
     Serial.println("Start Playing 4");
 
+     
     if (!effectOn) {
       mixer4.gain(0, 0.4);
       mixer4.gain(1, 0);
-      mixer4.gain(2, 0);
-      mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
-      delay1.delay(0, 0);
     }
+
+    
     playSdWav4.play("SAND.WAV");
     delay(10);
   }
 
+  */
   if (buttonStateEffect0 == HIGH) {
     effectOn = true;
-    addReverb();
-  } else {
-    effectOn = false;
-  }
+    startEffectOff = true;
+    //envelope1.noteOn();
+    //envelope2.noteOn();
 
+
+
+    
+  
+
+    drum1.noteOn();
+    
+    //addOzzy();
+  } else {
+    //envelope1.noteOff();
+    //envelope2.noteOff();
+   // effectOFF ();
+
+    
+    //effectOn = false;
+    
+  }
+/*
   if (buttonStateEffect1 == HIGH) {
     effectOn = true;
-    addDelay();
+    startEffectOff = true;
+
+    drum1.noteOn();
+    //envelope1.noteOn();
+    //envelope2.noteOn();
+    //addOzzy();
   } else {
-    effectOn = false;
+    // envelope1.noteOff();
+    // envelope2.noteOff();
+
+    //effectOFF ();
+    
+    //effectOn = false;
+
   }
 }
 // Functions for effects
 
-/*void addDistort () {
-  mixer4.gain(0, 0);
+void addOzzy () {
+  mixer4.gain(0, 0.4);
   mixer4.gain(1, 0.4);
-  mixer4.gain(2, 0);
-  mixer4.gain(3, 0);
-} */
-
-void addDelay () {
-  delay1.delay(0, delayTime);
-  mixer4.gain(0, 0);
-  mixer4.gain(1, 0);
-  mixer4.gain(2, 0.4);
-  mixer4.gain(3, 0);
-  mixer3.gain(3, 0.4);
 }
 
-void addReverb () {
-  mixer4.gain(0, 0);
-  mixer4.gain(1, 0);
-  mixer4.gain(2, 0);
-  mixer4.gain(3, 1);
+void effectOFF () {
+
+  if (startEffectOff) {
+    //envelope1.noteOff();
+    //envelope2.noteOff();
+    startEffectOff = false;
+    
+  }
+
+  */
 }
+
+
