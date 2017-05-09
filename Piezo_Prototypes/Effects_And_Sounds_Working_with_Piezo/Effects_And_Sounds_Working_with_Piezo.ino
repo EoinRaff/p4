@@ -44,6 +44,10 @@ AudioControlSGTL5000     sgtl5000_1;     //xy=426,498
 const int buttonEffect0 = 35;
 const int buttonEffect1 = 34;
 
+// For Buttons
+int buttonStateEffect0 = 0;
+int buttonStateEffect1 = 0;
+
 // For sounds pins
 const int piezo1 = 39;
 const int piezo2 = 38;
@@ -51,10 +55,6 @@ const int piezo3 = 37;
 const int piezo4 = 36;
 
 #define THRESHOLD 20 // Threshold for sensitivity of Piezo's
-
-// For Buttons
-int buttonStateEffect0 = 0;
-int buttonStateEffect1 = 0;
 
 // Variables for effects
 int delayTime = 300;
@@ -70,14 +70,14 @@ void setup() {
 
   Serial.begin(9600);
 
-  //This reserves memory blocks for the audio samples used. Each block contain 128 audio samples, which correspond to approx 2.9 ms of sound.
-  AudioMemory(500); // 100 was chosen because AudioProcessorUsageMax returned a max of 86, testing. Thus we chose 100, to make sure there enough, but still room for more manipulation. 
+  AudioMemory(500); // This reserves memory blocks for the audio samples used. Each block contain 128 audio samples, which correspond to approx 2.9 ms of sound.
+  
+  sgtl5000_1.enable(); // Enable use of Audio shield
+  sgtl5000_1.volume(0.9); // Volume for the Audio shield
 
-  sgtl5000_1.enable(); // Controls of Audio shield
-  sgtl5000_1.volume(0.9);
-
-  SPI.setMOSI(7); //Controls for SD reader
-  SPI.setSCK(14); //Controls for SD reader
+  SPI.setMOSI(7); // Set input pins for SD reader
+  SPI.setSCK(14); // Set input pins for SD reader
+  
   if (!(SD.begin(10))) {
     while (1) {
       Serial.println("Unable to read SD card");
@@ -86,46 +86,44 @@ void setup() {
   }
 
   // Set gains for first mixer
-  mixer1.gain(0, 0.25);
-  mixer1.gain(1, 0.25);
-  mixer1.gain(2, 0.25);
-  mixer1.gain(3, 0.25);
+  mixer1.gain(0, 0.20);
+  mixer1.gain(1, 0.20);
+  mixer1.gain(2, 0.20);
+  mixer1.gain(3, 0.20);
 
   // Sets gains for second mixer
-  mixer2.gain(0, 0.25);
-  mixer2.gain(1, 0.25);
-  mixer2.gain(2, 0.25);
-  mixer2.gain(3, 0.25);
+  mixer2.gain(0, 0.20);
+  mixer2.gain(1, 0.20);
+  mixer2.gain(2, 0.20);
+  mixer2.gain(3, 0.20);
 
   // Set gains for third mixer
-  mixer3.gain(0, 0.5);
-  mixer3.gain(1, 0.5);
+  mixer3.gain(0, 0.4);
+  mixer3.gain(1, 0.4);
+  mixer3.gain(2, 0);
   mixer3.gain(3, 0);
 
   // Set gains to passthrough sound without effects
-  mixer4.gain(0, 0.4);
-  mixer4.gain(1, 0);
-  mixer4.gain(2, 0);
-  mixer4.gain(3, 0);
+  mixer4.gain(0, 0.4); // Passthrough channel
+  mixer4.gain(1, 0); // Not used
+  mixer4.gain(2, 0); // Delay channel
+  mixer4.gain(3, 0); // Reverb channel
 
   // Initialize effects
-  //bitcrusher1.bits(8);
-  //bitcrusher1.sampleRate(16000);
   reverb1.reverbTime(2);
-  delay1.delay(1, 0);
+  delay1.delay(0, 0);
   delay(1000);
 
+  // Initialize pin mode
   pinMode(buttonEffect0, INPUT);
   pinMode(buttonEffect1, INPUT);
-
 }
 
 void loop() {
 
   //Serial.println(AudioMemoryUsageMax());
-  Serial.println(AudioProcessorUsageMax());
+  //Serial.println(AudioProcessorUsageMax());
 
-  
   buttonStateEffect0 = digitalRead(buttonEffect0);
   buttonStateEffect1 = digitalRead(buttonEffect1);
 
@@ -144,7 +142,7 @@ void loop() {
       mixer4.gain(1, 0);
       mixer4.gain(2, 0);
       mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
+      //mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
     playSdWav1.play("SAFRIDUO.WAV");
@@ -160,7 +158,7 @@ void loop() {
       mixer4.gain(1, 0);
       mixer4.gain(2, 0);
       mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
+      //mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
     playSdWav2.play("LIONKING.WAV");
@@ -176,10 +174,10 @@ void loop() {
       mixer4.gain(1, 0);
       mixer4.gain(2, 0);
       mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
+      //mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
-    playSdWav3.play("FREE.WAV");
+    playSdWav3.play("FREE2.WAV");
     delay(10);
   }
 
@@ -191,10 +189,10 @@ void loop() {
       mixer4.gain(1, 0);
       mixer4.gain(2, 0);
       mixer4.gain(3, 0);
-      mixer3.gain(3, 0);
+      //mixer3.gain(3, 0);
       delay1.delay(0, 0);
     }
-    playSdWav4.play("SAND.WAV");
+    playSdWav4.play("SAND2.WAV");
     delay(10);
   }
 
@@ -213,14 +211,6 @@ void loop() {
   }
 }
 // Functions for effects
-
-/*void addDistort () {
-  mixer4.gain(0, 0);
-  mixer4.gain(1, 0.4);
-  mixer4.gain(2, 0);
-  mixer4.gain(3, 0);
-} */
-
 void addDelay () {
   delay1.delay(0, delayTime);
   mixer4.gain(0, 0);
@@ -234,5 +224,5 @@ void addReverb () {
   mixer4.gain(0, 0);
   mixer4.gain(1, 0);
   mixer4.gain(2, 0);
-  mixer4.gain(3, 1);
+  mixer4.gain(3, 0.4);
 }
